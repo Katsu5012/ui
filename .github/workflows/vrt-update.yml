@@ -1,8 +1,11 @@
-# Regenerates the -linux VRT baselines inside the same Playwright container
-# that CI uses, and commits them to the branch. Run after an intentional visual
-# change (or when adding stories) to refresh the CI baselines.
+# Manual escape hatch: regenerates the -linux VRT baselines inside the same
+# Playwright container that CI uses and commits them to the branch.
 #
-# main is protected (PRs only), so dispatch this on your FEATURE BRANCH; the
+# Normally NOT needed — the ci.yml vrt job auto-commits refreshed baselines to
+# the PR branch when it detects a diff. Use this for bulk regeneration, e.g.
+# after bumping the Playwright container image.
+#
+# main is protected (PRs only), so dispatch this on a FEATURE BRANCH; the
 # bot commit lands on that branch and rides the PR into main.
 name: VRT Update Baselines
 

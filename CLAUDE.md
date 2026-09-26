@@ -66,10 +66,11 @@ React UI コンポーネントライブラリ。Base UI (`@base-ui/react`) を�
 - **mainへの直接pushは禁止**(branch protection、管理者含む)。必ずブランチを切ってPRを出す。
 - マージに必須なのは `checks` ジョブ(lint / format / typecheck / build / build-storybook)のみ。
 - **`vrt` ジョブは任意項目**(マージをブロックしない)。フローは:
-  1. PRのvrtがmainのベースラインと比較。差分なしなら緑で終わり。
-  2. 差分があると、expected(main)/ actual(PR)/ diff の画像テーブルが**PRのstickyコメント**に貼られる(画像は `vrt-report/pr-<番号>` ブランチに置かれ、PRクローズで自動削除)。
-  3. 目視して意図した変更なら、コメント内のコマンドで `vrt-update` をPRブランチにdispatch → botがベースライン更新をコミット → vrtが緑になる。
-  4. **新規コンポーネント・新規ストーリーはベースラインが無くてもエラーにならない**(`.storybook/vitest.setup.ts` で「reference not found」を握りつぶしている)。ローカル実行時は自動生成されるのでコミットする。
+  1. PRのvrtがベースラインと比較。差分なしなら緑で終わり。
+  2. 差分があると、expected / actual / diff の画像テーブルが**PRのstickyコメント**に貼られ(画像は `vrt-report/pr-<番号>` ブランチ、PRクローズで自動削除)、**同時にbotが更新後のベースラインをそのPRブランチに自動コミット**して、新しいhead SHAに対してCIを再dispatchする。手動の `vrt-update` dispatchは不要。
+  3. 人間はコメントの画像(とFiles changedのPNG差分)を目視する。意図どおりならマージ(=ベースライン確定)。意図しない差分ならコードを直してpush(ベースラインはまた自動更新される)。
+  4. **新規コンポーネント・新規ストーリーはベースラインが無くてもエラーにならない**(`.storybook/vitest.setup.ts` で「reference not found」を握りつぶしている)。CI側のベースラインも自動コミットで入る。ローカルのdarwin分はコミットしない(gitignore済み)。
+  5. `vrt-update.yml` は手動用の非常口(Playwrightイメージ更新時の一括再生成など)。
 - PRの会話(レビューコメント)は解決必須。
 
 ## CI(GitHub Actions)
