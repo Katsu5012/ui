@@ -1,6 +1,6 @@
-# Regenerates VRT baselines on the CI runner and commits them to the branch.
-# Run this when CI rendering drifts from locally generated baselines, or to
-# adopt runner-rendered baselines after an intentional visual change.
+# Regenerates the -linux VRT baselines inside the same Playwright container
+# that CI uses, and commits them to the branch. Run after an intentional visual
+# change (or when adding stories) to refresh the CI baselines.
 name: VRT Update Baselines
 
 on:
@@ -11,39 +11,29 @@ permissions:
 
 jobs:
   update:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.ref_name }}
 
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
+      - run: npm install -g pnpm@10.27.0
 
       - run: pnpm install --frozen-lockfile
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Caches/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - run: pnpm exec playwright install chromium
 
       - run: pnpm test:vrt:update
 
       - name: Commit updated baselines
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "src/**/__screenshots__"
           if git diff --cached --quiet; then
             echo "Baselines unchanged."
           else
-            git commit -m "chore: update VRT baselines from CI runner"
+            git commit -m "chore: update VRT baselines (linux)"
             git push
           fi

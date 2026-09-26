@@ -61,10 +61,11 @@ React UI コンポーネントライブラリ。Base UI (`@base-ui/react`) を�
 
 ## CI(GitHub Actions)
 
-- `.github/workflows/ci.yml`: push(main)/PRで実行。`checks` ジョブ(ubuntu: lint / format:check / typecheck / build / build-storybook)と `vrt` ジョブ(**macos**: VRT)。
-- VRTジョブがmacOSなのはベースラインが `-darwin` だから。ubuntuに変えるとベースラインが全部見つからず落ちるので変えないこと。
+- `.github/workflows/ci.yml`: push(main)/PR/manualで実行。`checks` ジョブ(ubuntu: lint / format:check / typecheck / build / build-storybook)と `vrt` ジョブ。
+- `vrt` ジョブは **Playwright公式コンテナ**(`mcr.microsoft.com/playwright:v<playwrightのバージョン>-noble`)内で実行する。描画環境がイメージタグで固定されるため。**playwrightパッケージを更新したらイメージタグも合わせて更新すること**(ci.yml / vrt-update.yml の2箇所)。
+- VRTベースラインは **2系統コミットされる**: `-darwin.png`(ローカルmacOS用)と `-linux.png`(CIコンテナ用)。`toMatchScreenshot` がプラットフォームで自動的に使い分ける。
+- 見た目を変えたら: ローカルで `pnpm test:vrt:update`(darwin更新)+ `.github/workflows/vrt-update.yml` をdispatch(linux更新、runnerが生成してコミットする)。**linux側の更新を忘れるとCIが落ちる**。
 - VRT失敗時は actual / diff 画像が `vrt-attachments` アーティファクトに上がる。
-- runnerとローカルのレンダリングがズレた場合や、CI側のベースラインを正としたい場合は `.github/workflows/vrt-update.yml`(workflow_dispatch)を実行するとrunnerで再生成してコミットされる。
 
 ## lint ポリシー(shadcn/lint)
 
