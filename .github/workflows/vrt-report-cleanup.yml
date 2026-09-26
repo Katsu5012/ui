@@ -1,0 +1,24 @@
+# Deletes the vrt-report/pr-<n> branch when its PR closes.
+name: VRT Report Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const ref = `heads/vrt-report/pr-${context.payload.pull_request.number}`;
+            try {
+              await github.rest.git.deleteRef({ ...context.repo, ref });
+              core.info(`Deleted ${ref}`);
+            } catch (e) {
+              core.info(`No report branch to delete (${e.status})`);
+            }

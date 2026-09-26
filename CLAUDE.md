@@ -63,7 +63,11 @@ React UI コンポーネントライブラリ。Base UI (`@base-ui/react`) を�
 
 - **mainへの直接pushは禁止**(branch protection、管理者含む)。必ずブランチを切ってPRを出す。
 - マージに必須なのは `checks` ジョブ(lint / format / typecheck / build / build-storybook)のみ。
-- **`vrt` ジョブは任意項目**(マージをブロックしない)。意図した見た目の変更でVRTが赤くなるのは正常で、その場合はPRブランチ上でベースラインを更新してからマージする(下記)。赤のまま放置せず、必ず「更新して緑にする」か「差分を確認して意図どおりと判断した」かのどちらかにすること。
+- **`vrt` ジョブは任意項目**(マージをブロックしない)。フローは:
+  1. PRのvrtがmainのベースラインと比較。差分なしなら緑で終わり。
+  2. 差分があると、expected(main)/ actual(PR)/ diff の画像テーブルが**PRのstickyコメント**に貼られる(画像は `vrt-report/pr-<番号>` ブランチに置かれ、PRクローズで自動削除)。
+  3. 目視して意図した変更なら、コメント内のコマンドで `vrt-update` をPRブランチにdispatch → botがベースライン更新をコミット → vrtが緑になる。
+  4. **新規コンポーネント・新規ストーリーはベースラインが無くてもエラーにならない**(`.storybook/vitest.setup.ts` で「reference not found」を握りつぶしている)。ローカル実行時は自動生成されるのでコミットする。
 - PRの会話(レビューコメント)は解決必須。
 
 ## CI(GitHub Actions)

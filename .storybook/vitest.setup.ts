@@ -8,8 +8,21 @@ const annotations = setProjectAnnotations([projectAnnotations]);
 beforeAll(annotations.beforeAll);
 
 // VRT: screenshot every story after it renders and compare against the
-// committed baseline (src/**/__screenshots__/). Update with `pnpm test:vrt:update`.
+// committed baseline (__screenshots__/). Update with `pnpm test:vrt:update`.
 afterEach(async ({ task }) => {
   const root = page.elementLocator(document.body);
-  await expect(root).toMatchScreenshot(task.name);
+  try {
+    await expect(root).toMatchScreenshot(task.name);
+  } catch (error) {
+    // A brand-new story or component has no baseline yet; the screenshot is
+    // created on this run and that must not fail the suite. Only actual
+    // mismatches against an existing baseline are failures.
+    if (
+      error instanceof Error &&
+      error.message.includes("No existing reference screenshot found")
+    ) {
+      return;
+    }
+    throw error;
+  }
 });

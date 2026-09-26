@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -37,12 +37,19 @@ jobs:
 
   # VRT runs in the official Playwright container so the rendering environment
   # is pinned by the image tag. Keep the tag in sync with the playwright
-  # version in pnpm-lock.yaml. Baselines compared here are the -linux.png ones;
-  # regenerate them with the "VRT Update Baselines" workflow.
+  # version in pnpm-lock.yaml. Baselines compared here are the -linux.png ones.
+  #
+  # Not a required check: intentional visual changes legitimately fail it.
+  # On a PR failure the expected/actual/diff images are pushed to a
+  # vrt-report/pr-<n> branch and posted as a sticky PR comment for review.
+  # New stories without a baseline do NOT fail (handled in vitest.setup.ts).
   vrt:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v5
 
@@ -52,10 +59,112 @@ jobs:
 
       - run: pnpm test:vrt
 
-      - name: Upload VRT diff images
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - name: Collect diff images
+        id: collect
+        if: failure() && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p vrt-report
+          : > vrt-report/manifest.txt
+          find .vitest/attachments -name "*-diff-*.png" | sort | while read -r diff; do
+            actual="${diff/-diff-/-actual-}"
+            base="$(basename "$diff")"
+            story="${base%-diff-*}"
+            comp="$(basename "$(dirname "$(dirname "$diff")")")"
+            mkdir -p "vrt-report/$comp"
+            cp "$diff" "vrt-report/$comp/$story-diff.png"
+            [ -f "$actual" ] && cp "$actual" "vrt-report/$comp/$story-actual.png"
+            expected="__screenshots__/$comp/$story-chromium-linux.png"
+            [ -f "$expected" ] && cp "$expected" "vrt-report/$comp/$story-expected.png"
+            echo "$comp/$story" >> vrt-report/manifest.txt
+          done
+          echo "count=$(wc -l < vrt-report/manifest.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Push report branch
+        id: report
+        if: failure() && github.event_name == 'pull_request' && steps.collect.outputs.count != '0'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          cd vrt-report
+          git init -q -b "vrt-report/pr-$PR"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "VRT report for PR #$PR (run ${{ github.run_id }})"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:refs/heads/vrt-report/pr-$PR"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Comment diff table on PR
+        if: failure() && github.event_name == 'pull_request' && steps.collect.outputs.count != '0'
+        uses: actions/github-script@v7
+        env:
+          REPORT_SHA: ${{ steps.report.outputs.sha }}
         with:
-          name: vrt-attachments
-          path: .vitest/attachments/
-          retention-days: 7
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- vrt-report -->";
+            const sha = process.env.REPORT_SHA;
+            const raw = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${sha}`;
+            const entries = fs
+              .readFileSync("vrt-report/manifest.txt", "utf8")
+              .trim()
+              .split("\n")
+              .filter(Boolean);
+            const img = (entry, kind) => {
+              const [comp, story] = [entry.slice(0, entry.indexOf("/")), entry.slice(entry.indexOf("/") + 1)];
+              const path = `${comp}/${story}-${kind}.png`;
+              return fs.existsSync(`vrt-report/${path}`)
+                ? `<img src="${raw}/${path}" width="220">`
+                : "—";
+            };
+            const rows = entries
+              .map((e) => `| \`${e}\` | ${img(e, "expected")} | ${img(e, "actual")} | ${img(e, "diff")} |`)
+              .join("\n");
+            const branch = context.payload.pull_request.head.ref;
+            const body = [
+              `### 🖼 VRT: ${entries.length} 件の差分`,
+              "",
+              "| Story | main (expected) | PR (actual) | Diff |",
+              "| --- | --- | --- | --- |",
+              rows,
+              "",
+              "意図した変更なら、このブランチでベースラインを更新してください:",
+              "```sh",
+              `gh workflow run vrt-update.yml --ref ${branch}`,
+              "pnpm test:vrt:update  # ローカルの darwin ベースラインも忘れずに",
+              "```",
+              `[workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              marker,
+            ].join("\n");
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
+
+      - name: Resolve previous diff comment
+        if: success() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = "<!-- vrt-report -->";
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                ...context.repo,
+                comment_id: existing.id,
+                body: `### ✅ VRT: main との差分なし\n${marker}`,
+              });
+            }
