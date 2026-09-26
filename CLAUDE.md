@@ -59,12 +59,19 @@ React UI コンポーネントライブラリ。Base UI (`@base-ui/react`) を�
 - TypeScript 6 では `baseUrl` が非推奨。`paths` は `"./src/*"` のように相対で書く。
 - ライブラリのビルド設定はあえて `vite.lib.config.ts` という名前にしてある(`vite.config.ts` にすると Storybook の vite builder が lib mode 設定を拾って壊れるため)。
 
+## 開発フロー(PRベース)
+
+- **mainへの直接pushは禁止**(branch protection、管理者含む)。必ずブランチを切ってPRを出す。
+- マージに必須なのは `checks` ジョブ(lint / format / typecheck / build / build-storybook)のみ。
+- **`vrt` ジョブは任意項目**(マージをブロックしない)。意図した見た目の変更でVRTが赤くなるのは正常で、その場合はPRブランチ上でベースラインを更新してからマージする(下記)。赤のまま放置せず、必ず「更新して緑にする」か「差分を確認して意図どおりと判断した」かのどちらかにすること。
+- PRの会話(レビューコメント)は解決必須。
+
 ## CI(GitHub Actions)
 
 - `.github/workflows/ci.yml`: push(main)/PR/manualで実行。`checks` ジョブ(ubuntu: lint / format:check / typecheck / build / build-storybook)と `vrt` ジョブ。
 - `vrt` ジョブは **Playwright公式コンテナ**(`mcr.microsoft.com/playwright:v<playwrightのバージョン>-noble`)内で実行する。描画環境がイメージタグで固定されるため。**playwrightパッケージを更新したらイメージタグも合わせて更新すること**(ci.yml / vrt-update.yml の2箇所)。
 - VRTベースラインは **2系統コミットされる**: `-darwin.png`(ローカルmacOS用)と `-linux.png`(CIコンテナ用)。`toMatchScreenshot` がプラットフォームで自動的に使い分ける。
-- 見た目を変えたら: ローカルで `pnpm test:vrt:update`(darwin更新)+ `.github/workflows/vrt-update.yml` をdispatch(linux更新、runnerが生成してコミットする)。**linux側の更新を忘れるとCIが落ちる**。
+- 見た目を変えたら: ローカルで `pnpm test:vrt:update`(darwin更新)+ **PRブランチを指定して** `.github/workflows/vrt-update.yml` をdispatch(`gh workflow run vrt-update.yml --ref <branch>`。linuxベースラインをrunnerが生成してそのブランチにコミットする)。mainは保護されているのでmainに対するdispatchは失敗する。
 - VRT失敗時は actual / diff 画像が `vrt-attachments` アーティファクトに上がる。
 
 ## lint ポリシー(shadcn/lint)
