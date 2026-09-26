@@ -15,6 +15,21 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Baselines are CI-rendered artifacts: only the vrt-update workflow bot
+      # may add or change them. Blocks locally rendered images from merging.
+      - name: Ensure VRT baselines are bot-authored
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          bad="$(git log "origin/${{ github.base_ref }}..HEAD" --format='%h %an' -- __screenshots__ | grep -v 'github-actions\[bot\]' || true)"
+          if [ -n "$bad" ]; then
+            echo "::error::__screenshots__ must only be modified by the vrt-update workflow (github-actions[bot]). Offending commits:"
+            echo "$bad"
+            exit 1
+          fi
 
       - uses: pnpm/action-setup@v4
 

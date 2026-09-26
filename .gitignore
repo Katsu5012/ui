@@ -2,5 +2,10 @@ node_modules/
 dist/
 storybook-static/
 .vitest/
+
+# VRT: only CI-generated -linux baselines are tracked (committed by the
+# vrt-update workflow bot). Locally generated baselines stay untracked.
+__screenshots__/**/*-darwin.png
+__screenshots__/**/*-win32.png
 *.log
 .DS_Store

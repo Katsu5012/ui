@@ -25,8 +25,9 @@ pnpm storybook                          # dev server at http://localhost:6006
 
 VRT is implemented with `@storybook/addon-vitest`: every story runs as a Vitest browser-mode test in headless Chromium, and an `afterEach` hook in `.storybook/vitest.setup.ts` screenshots the rendered story and compares it against the committed baseline via Vitest's `toMatchScreenshot`.
 
-- Baselines live in `__screenshots__/<component>/<Story>-chromium-<platform>.png` at the repo root and are committed (layout is defined by `resolveScreenshotPath` in `vitest.config.ts`).
-- Two baseline sets coexist: `-darwin` (local macOS runs) and `-linux` (CI, rendered in the pinned Playwright container). After a visual change, update both: run `pnpm test:vrt:update` locally and dispatch the "VRT Update Baselines" workflow.
+- Baselines live in `__screenshots__/<component>/<Story>-chromium-<platform>.png` at the repo root (layout is defined by `resolveScreenshotPath` in `vitest.config.ts`).
+- Only CI-rendered `-linux` baselines are committed, and only by the "VRT Update Baselines" workflow bot — a CI guard rejects PRs where `__screenshots__/` was touched by anyone else. Locally rendered `-darwin` baselines are gitignored scratch files (auto-created on your first run).
+- After an intentional visual change, dispatch the update workflow on your PR branch: `gh workflow run vrt-update.yml --ref <branch>`. On a VRT failure the PR gets a sticky comment with an expected/actual/diff image table for review; new stories without baselines never fail.
 - On a failed comparison, the actual and diff images are written to `.vitest/attachments/` (gitignored).
 - After an intentional visual change, run `pnpm test:vrt:update` and commit the updated baselines.
 - Exclude a story from testing entirely with `tags: ['!test']` in the story or meta.

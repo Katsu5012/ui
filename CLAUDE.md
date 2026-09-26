@@ -44,7 +44,9 @@ React UI コンポーネントライブラリ。Base UI (`@base-ui/react`) を�
 ## VRT の仕組みと運用
 
 - `vitest.config.ts` の `storybookTest` プラグインが全 stories を Vitest のテストとして実行し、`.storybook/vitest.setup.ts` の `afterEach` が各ストーリーを `toMatchScreenshot` でベースライン比較する。
-- ベースラインは **リポジトリ直下の `__screenshots__/<コンポーネント名>/<Story>-chromium-<platform>.png`** に集約して保存され、コミット対象(配置は `vitest.config.ts` の `resolveScreenshotPath` で定義。src内には置かない)。
+- ベースラインは **リポジトリ直下の `__screenshots__/<コンポーネント名>/<Story>-chromium-<platform>.png`** に集約(配置は `vitest.config.ts` の `resolveScreenshotPath` で定義)。
+- **コミットされるのはCIコンテナ産の `-linux.png` のみで、更新できるのは `vrt-update` ワークフロー(github-actions bot)だけ**。`checks` ジョブが「`__screenshots__/` を変更したコミットの著者がbotであること」を検証し、人間やローカル環境産の画像が混ざったPRはマージできない。
+- ローカルの `-darwin.png` はgitignore済みの使い捨て(初回 `pnpm test:vrt` で自動生成され、以後ローカルの差分検知に使う)。**ローカルのベースラインは絶対にコミットしない**。
 - 失敗時の actual / diff 画像は `.vitest/attachments/`(gitignore済み)。
 - ベースラインはレンダリング環境依存(フォント・viewport等)。基準はローカルmacOSで生成したもの。**Vitestのメジャーアップデートでviewportが変わり全件failすることがある**(v4→v5で960×720→1200×900に変化した実績あり)。その場合はベースライン再生成でよい。
 - 意図的な見た目の変更・ストーリー追加をしたら `pnpm test:vrt:update` を実行し、更新されたベースラインをコミットに含める。
@@ -75,7 +77,7 @@ React UI コンポーネントライブラリ。Base UI (`@base-ui/react`) を�
 - `.github/workflows/ci.yml`: push(main)/PR/manualで実行。`checks` ジョブ(ubuntu: lint / format:check / typecheck / build / build-storybook)と `vrt` ジョブ。
 - `vrt` ジョブは **Playwright公式コンテナ**(`mcr.microsoft.com/playwright:v<playwrightのバージョン>-noble`)内で実行する。描画環境がイメージタグで固定されるため。**playwrightパッケージを更新したらイメージタグも合わせて更新すること**(ci.yml / vrt-update.yml の2箇所)。
 - VRTベースラインは **2系統コミットされる**: `-darwin.png`(ローカルmacOS用)と `-linux.png`(CIコンテナ用)。`toMatchScreenshot` がプラットフォームで自動的に使い分ける。
-- 見た目を変えたら: ローカルで `pnpm test:vrt:update`(darwin更新)+ **PRブランチを指定して** `.github/workflows/vrt-update.yml` をdispatch(`gh workflow run vrt-update.yml --ref <branch>`。linuxベースラインをrunnerが生成してそのブランチにコミットする)。mainは保護されているのでmainに対するdispatchは失敗する。
+- 見た目を変えたら: **PRブランチを指定して** `.github/workflows/vrt-update.yml` をdispatch(`gh workflow run vrt-update.yml --ref <branch>`)。botがlinuxベースラインを生成してそのブランチにコミットする。ローカルは `pnpm test:vrt:update` でdarwinを更新すればよい(コミットはしない)。mainは保護されているのでmainへのdispatchは失敗する。
 - VRT失敗時は actual / diff 画像が `vrt-attachments` アーティファクトに上がる。
 
 ## lint ポリシー(shadcn/lint)
