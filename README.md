@@ -12,14 +12,14 @@ pnpm storybook                          # dev server at http://localhost:6006
 
 ## Scripts
 
-| Script | Description |
-| --- | --- |
-| `pnpm storybook` | Start Storybook dev server |
-| `pnpm build-storybook` | Build static Storybook into `storybook-static/` |
-| `pnpm test:vrt` | Run visual regression tests (headless Chromium, self-contained) |
-| `pnpm test:vrt:update` | Update VRT baseline screenshots |
-| `pnpm typecheck` | Type-check with `tsc --noEmit` |
-| `pnpm build` | Build the library into `dist/` (ESM + CJS + type declarations) |
+| Script                 | Description                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| `pnpm storybook`       | Start Storybook dev server                                                        |
+| `pnpm build-storybook` | Build static Storybook into `storybook-static/`                                   |
+| `pnpm test:vrt`        | Run visual regression tests (headless Chromium, self-contained)                   |
+| `pnpm test:vrt:update` | Update VRT baseline screenshots                                                   |
+| `pnpm typecheck`       | Type-check with `tsc --noEmit`                                                    |
+| `pnpm build`           | Build the library into `dist/` (ESM + CJS + type declarations, via Vite lib mode) |
 
 ## Visual regression testing
 
@@ -27,7 +27,7 @@ VRT is implemented with `@storybook/addon-vitest`: every story runs as a Vitest 
 
 - Baselines live in `src/**/__screenshots__/`, named `<Story>-chromium-darwin.png`, and are committed.
 - Baselines are rendering-environment dependent (OS fonts, GPU). The committed ones were generated on macOS; running on another platform creates separate `-<platform>` baselines.
-- On a failed comparison, the actual and diff images are written to `.vitest-attachments/` (gitignored).
+- On a failed comparison, the actual and diff images are written to `.vitest/attachments/` (gitignored).
 - After an intentional visual change, run `pnpm test:vrt:update` and commit the updated baselines.
 - Exclude a story from testing entirely with `tags: ['!test']` in the story or meta.
 
