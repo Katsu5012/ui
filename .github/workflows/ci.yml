@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm format:check
+
+      - run: pnpm typecheck
+
+      - run: pnpm build
+
+      - run: pnpm build-storybook
+
+  # VRT runs on macOS because the committed baselines are rendered on macOS
+  # (src/**/__screenshots__/*-darwin.png). If runner rendering ever drifts from
+  # local, regenerate baselines with the "VRT Update Baselines" workflow.
+  vrt:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - run: pnpm exec playwright install chromium
+
+      - run: pnpm test:vrt
+
+      - name: Upload VRT diff images
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-attachments
+          path: .vitest/attachments/
+          retention-days: 7
