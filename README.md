@@ -25,8 +25,8 @@ pnpm storybook                          # dev server at http://localhost:6006
 
 VRT is implemented with `@storybook/addon-vitest`: every story runs as a Vitest browser-mode test in headless Chromium, and an `afterEach` hook in `.storybook/vitest.setup.ts` screenshots the rendered story and compares it against the committed baseline via Vitest's `toMatchScreenshot`.
 
-- Baselines live in `src/**/__screenshots__/`, named `<Story>-chromium-darwin.png`, and are committed.
-- Baselines are rendering-environment dependent (OS fonts, GPU). The committed ones were generated on macOS; running on another platform creates separate `-<platform>` baselines.
+- Baselines live in `__screenshots__/<component>/<Story>-chromium-<platform>.png` at the repo root and are committed (layout is defined by `resolveScreenshotPath` in `vitest.config.ts`).
+- Two baseline sets coexist: `-darwin` (local macOS runs) and `-linux` (CI, rendered in the pinned Playwright container). After a visual change, update both: run `pnpm test:vrt:update` locally and dispatch the "VRT Update Baselines" workflow.
 - On a failed comparison, the actual and diff images are written to `.vitest/attachments/` (gitignored).
 - After an intentional visual change, run `pnpm test:vrt:update` and commit the updated baselines.
 - Exclude a story from testing entirely with `tags: ['!test']` in the story or meta.

@@ -44,7 +44,7 @@ React UI コンポーネントライブラリ。Base UI (`@base-ui/react`) を�
 ## VRT の仕組みと運用
 
 - `vitest.config.ts` の `storybookTest` プラグインが全 stories を Vitest のテストとして実行し、`.storybook/vitest.setup.ts` の `afterEach` が各ストーリーを `toMatchScreenshot` でベースライン比較する。
-- ベースラインは `src/**/__screenshots__/<Story>-chromium-darwin.png` に保存され、コミット対象。
+- ベースラインは **リポジトリ直下の `__screenshots__/<コンポーネント名>/<Story>-chromium-<platform>.png`** に集約して保存され、コミット対象(配置は `vitest.config.ts` の `resolveScreenshotPath` で定義。src内には置かない)。
 - 失敗時の actual / diff 画像は `.vitest/attachments/`(gitignore済み)。
 - ベースラインはレンダリング環境依存(フォント・viewport等)。基準はローカルmacOSで生成したもの。**Vitestのメジャーアップデートでviewportが変わり全件failすることがある**(v4→v5で960×720→1200×900に変化した実績あり)。その場合はベースライン再生成でよい。
 - 意図的な見た目の変更・ストーリー追加をしたら `pnpm test:vrt:update` を実行し、更新されたベースラインをコミットに含める。
