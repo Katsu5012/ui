@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm build-storybook)",
+      "Bash(pnpm storybook:*)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:vrt)",
+      "Bash(pnpm test:vrt:*)",
+      "Bash(pnpm exec vitest:*)",
+      "Bash(pnpm exec playwright install:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm ls:*)",
+      "Bash(pnpm why:*)"
+    ]
+  }
+}
