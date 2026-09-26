@@ -1,6 +1,6 @@
 node_modules/
 dist/
 storybook-static/
-.vitest-attachments/
+.vitest/
 *.log
 .DS_Store

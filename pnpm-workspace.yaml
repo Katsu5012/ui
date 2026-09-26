@@ -1,0 +1,9 @@
+# Do not install package versions published less than 24 hours ago
+# (supply-chain safety window; pnpm >= 10.16).
+minimumReleaseAge: 1440
+
+onlyBuiltDependencies:
+  - "@parcel/watcher"
+  - "@swc/core"
+  - esbuild
+  - unrs-resolver

@@ -1,7 +1,7 @@
-import { setProjectAnnotations } from '@storybook/react-vite';
-import { afterEach, beforeAll, expect } from 'vitest';
-import { page } from 'vitest/browser';
-import * as projectAnnotations from './preview';
+import { setProjectAnnotations } from "@storybook/react-vite";
+import { afterEach, beforeAll, expect } from "vitest";
+import { page } from "vitest/browser";
+import * as projectAnnotations from "./preview";
 
 const annotations = setProjectAnnotations([projectAnnotations]);
 

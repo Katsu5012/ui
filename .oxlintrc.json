@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["@shadcn/lint"],
+  "settings": {
+    "shadcn": {
+      "ui": "@/components",
+      "mergeFunctions": ["cx"]
+    }
+  },
+  "rules": {
+    "shadcn/no-unknown-classes": "error",
+    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-inline-styles": "error"
+  }
+}

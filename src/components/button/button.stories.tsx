@@ -1,23 +1,23 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button } from './button';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Button } from "./button";
 
 const meta = {
-  title: 'Components/Button',
+  title: "Components/Button",
   component: Button,
   args: {
-    children: 'Button',
-    variant: 'primary',
-    size: 'md',
+    children: "Button",
+    variant: "primary",
+    size: "md",
     disabled: false,
   },
   argTypes: {
     variant: {
-      control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'danger'],
+      control: "select",
+      options: ["primary", "secondary", "ghost", "danger"],
     },
     size: {
-      control: 'select',
-      options: ['sm', 'md', 'lg'],
+      control: "select",
+      options: ["sm", "md", "lg"],
     },
   },
 } satisfies Meta<typeof Button>;
@@ -28,15 +28,15 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {};
 
 export const Secondary: Story = {
-  args: { variant: 'secondary' },
+  args: { variant: "secondary" },
 };
 
 export const Ghost: Story = {
-  args: { variant: 'ghost' },
+  args: { variant: "ghost" },
 };
 
 export const Danger: Story = {
-  args: { variant: 'danger' },
+  args: { variant: "danger" },
 };
 
 export const Disabled: Story = {
