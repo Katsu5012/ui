@@ -19,6 +19,26 @@ export default defineConfig({
             headless: true,
             provider: playwright(),
             instances: [{ browser: "chromium" }],
+            expect: {
+              toMatchScreenshot: {
+                // Keep all baselines in one place (repo root) instead of
+                // scattering __screenshots__ directories across src/.
+                resolveScreenshotPath: ({
+                  root,
+                  testFileDirectory,
+                  arg,
+                  browserName,
+                  platform,
+                  ext,
+                }) =>
+                  path.resolve(
+                    root,
+                    "__screenshots__",
+                    path.basename(testFileDirectory),
+                    `${arg}-${browserName}-${platform}${ext}`,
+                  ),
+              },
+            },
           },
           setupFiles: ["./.storybook/vitest.setup.ts"],
         },
